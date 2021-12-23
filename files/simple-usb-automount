@@ -7,22 +7,27 @@ dev="/dev/$2"
 mkdir /usb -p
 findmnt /usb || sudo mount -t tmpfs tmpfs /usb
 
+get_uuid () {
+	blkid -s UUID -o value /dev/$1
+}
+
 if [[ "$1" == "a" ]]; then
 	for part in $(lsblk -nro name "$dev" | tac)
 	do
-		mkdir "$mnt$part" -p
-		mount "/dev/$part" "$mnt$part" -o "$mntopts"
+		uuid=$(get_uuid $part)
+		mkdir "$mnt$uuid" -p
+		mount "/dev/$part" "$mnt$uuid" -o "$mntopts"
 		if [[ "$?" -eq 0 ]]; then
-			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt$part"
+			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt$uuid"
 		else
-			rmdir "$mnt$part"
+			rmdir "$mnt$uuid"
 		fi
 	done
 else
 	for part in $(ls "$mnt" | grep "^$2")
 	do
-		umount "$mnt$part"
-		rmdir "$mnt$part"
+		uuid=$(get_uuid $part)
+		umount "$mnt$uuid"
+		rmdir "$mnt$uuid"
 	done
 fi
-
