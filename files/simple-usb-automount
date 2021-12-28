@@ -1,33 +1,34 @@
 #!/bin/bash
 
-mnt="/usb/"
-mntopts="nosuid,nodev,noexec"
+mnt="/run/mount/usb/"
+mntopts="rw"
 dev="/dev/$2"
 
-mkdir /usb -p
-findmnt /usb || sudo mount -t tmpfs tmpfs /usb
+mkdir /run/mount/usb -p
+findmnt /run/mount/usb || sudo mount -t tmpfs tmpfs /run/mount/usb
 
-get_uuid () {
-	blkid -s UUID -o value /dev/$1
+get_name () {
+	blkid -s LABEL -o value /dev/$1
 }
 
 if [[ "$1" == "a" ]]; then
 	for part in $(lsblk -nro name "$dev" | tac)
 	do
-		uuid=$(get_uuid $part)
-		mkdir "$mnt$uuid" -p
-		mount "/dev/$part" "$mnt$uuid" -o "$mntopts"
+		name=$(get_name $part)
+		[ -z "$name" ] && continue #if no label set, do nothing
+		mkdir "$mnt$name" -p
+		mount "/dev/$part" "$mnt$name" -o "$mntopts"
 		if [[ "$?" -eq 0 ]]; then
-			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt$uuid"
+			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt$name"
 		else
-			rmdir "$mnt$uuid"
+			rmdir "$mnt$name"
 		fi
 	done
 else
 	for part in $(ls "$mnt" | grep "^$2")
 	do
-		uuid=$(get_uuid $part)
-		umount "$mnt$uuid"
-		rmdir "$mnt$uuid"
+		name=$(get_name $part)
+		umount "$mnt$name"
+		rmdir "$mnt$name"
 	done
 fi
