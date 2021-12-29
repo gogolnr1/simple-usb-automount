@@ -1,7 +1,7 @@
 #!/bin/bash
 
 mnt="/run/mount/usb/"
-mntopts="rw"
+mntopts="user,umask=0000"
 dev="/dev/$2"
 
 mkdir /run/mount/usb -p
