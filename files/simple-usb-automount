@@ -48,6 +48,6 @@ else
 	do
 		get_attrs $part
 		umount "$mnt$MTDEV_LABEL"
-		rmdir "$mnt$label"
+		rmdir "$mnt$MTDEV_LABEL"
 	done
 fi
