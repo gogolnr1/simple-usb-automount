@@ -2,7 +2,7 @@
 
 set -e
 
-mnt="/run/mount/usb/"
+mnt="/run/mount/usb"
 mntopts_ntfs="user,umask=0000"
 mntopts_ext4="rw"
 dev="/dev/$2"
@@ -34,20 +34,20 @@ if [[ "$1" == "a" ]]; then
 		[[ ! -v mntopts_$MTDEV_TYPE ]] || [[ -z "$MTDEV_LABEL" ]] && continue
 		mntopts="mntopts_$MTDEV_TYPE"
 
-		mkdir "$mnt$MTDEV_LABEL" -p
-		mount "/dev/$part" "$mnt$MTDEV_LABEL" -o "${!mntopts}"
+		mkdir "$mnt/$MTDEV_LABEL" -p
+		mount "/dev/$part" "$mnt/$MTDEV_LABEL" -o "${!mntopts}"
 
 		if [[ "$?" -eq 0 ]]; then
-			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt$MTDEV_LABEL"
+			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt/$MTDEV_LABEL"
 		else
-			rmdir "$mnt$MTDEV_LABEL"
+			rmdir "$mnt/$MTDEV_LABEL"
 		fi
 	done
 else
-	for part in $(ls "$mnt" | grep "^$2")
+	for part in $(ls "$mnt/" | grep "^$2")
 	do
 		get_attrs $part
-		umount "$mnt$MTDEV_LABEL"
-		rmdir "$mnt$MTDEV_LABEL"
+		umount "$mnt/$MTDEV_LABEL"
+		rmdir "$mnt/$MTDEV_LABEL"
 	done
 fi
