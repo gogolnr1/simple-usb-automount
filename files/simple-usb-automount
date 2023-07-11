@@ -1,4 +1,5 @@
 #!/bin/bash
+# /usr/local/bin/simple-usb-automount
 
 set -e
 
@@ -7,47 +8,39 @@ mntopts_ntfs="user,umask=0000"
 mntopts_ext4="rw"
 dev="/dev/$2"
 
-mkdir /run/mount/usb -p
-findmnt /run/mount/usb || sudo mount -t tmpfs tmpfs /run/mount/usb
+mkdir "$mnt" -p
+findmnt $mnt || sudo mount -t tmpfs tmpfs $mnt
 
 get_attrs () {
-	for attr in TYPE LABEL
-	do
-		eval "MTDEV_$attr"="$(blkid -s $attr -o value /dev/$1)"
-	done
+    for attr in TYPE LABEL; do
+        eval "MTDEV_$attr"="$(blkid -s $attr -o value /dev/$1)" || true
+    done
 }
 
-# since eval sets global variables and we don't want them afterwards
-function cleanup {
-	unset MTDEV_TYPE
-	unset MTDEV_LABEL
+# function to unmount and cleanup
+unmount_and_cleanup() {
+    umount "$mnt/$MTDEV_LABEL" || true
+    rmdir "$mnt/$MTDEV_LABEL" || true
 }
-
-trap cleanup EXIT
 
 if [[ "$1" == "a" ]]; then
-	for part in $(lsblk -nro name "$dev" | tac)
-	do
-		get_attrs $part
-
-		#if no filesystem matches or no label is set, do nothing
-		[[ ! -v mntopts_$MTDEV_TYPE ]] || [[ -z "$MTDEV_LABEL" ]] && continue
-		mntopts="mntopts_$MTDEV_TYPE"
-
-		mkdir "$mnt/$MTDEV_LABEL" -p
-		mount "/dev/$part" "$mnt/$MTDEV_LABEL" -o "${!mntopts}"
-
-		if [[ "$?" -eq 0 ]]; then
-			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt/$MTDEV_LABEL"
-		else
-			rmdir "$mnt/$MTDEV_LABEL"
-		fi
-	done
+    for part in $(lsblk -nro name "$dev" | tac); do
+        get_attrs $part
+        if [[ ! -v "mntopts_$MTDEV_TYPE" ]] || [[ -z "$MTDEV_LABEL" ]]; then
+            continue
+        fi
+        mntopts="mntopts_$MTDEV_TYPE"
+        mkdir "$mnt/$MTDEV_LABEL" -p
+        mount "/dev/$part" "$mnt/$MTDEV_LABEL" -o "${!mntopts}"
+        if [[ "$?" -eq 0 ]]; then
+	    #sudo -u "$USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$UID/bus" notify-send "Mounted /dev/$part at $mnt/$MTDEV_LABEL"
+        else
+            unmount_and_cleanup
+        fi
+    done
 else
-	for part in $(ls "$mnt/" | grep "^$2")
-	do
-		get_attrs $part
-		umount "$mnt/$MTDEV_LABEL"
-		rmdir "$mnt/$MTDEV_LABEL"
-	done
+    for part in $(ls "$mnt/" | grep "^$2"); do
+        get_attrs $part
+        unmount_and_cleanup
+    done
 fi
