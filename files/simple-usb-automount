@@ -31,7 +31,10 @@ if [[ "$1" == "a" ]]; then
 		get_attrs $part
 
 		#if no filesystem matches or no label is set, do nothing
-		[[ ! -v mntopts_$MTDEV_TYPE ]] || [[ -z "$MTDEV_LABEL" ]] && continue
+		[[ -z "$MTDEV_LABEL" ]] && continue
+		[[ ! -v mntopts_$MTDEV_TYPE ]] && [[ -v mntopts_$MTDEV_FSTYPE ]] &&
+			MTDEV_TYPE=$MTDEV_FSTYPE || continue
+
 		mntopts="mntopts_$MTDEV_TYPE"
 
 		mkdir "$mnt/$MTDEV_LABEL" -p
