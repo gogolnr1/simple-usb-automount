@@ -2,19 +2,33 @@
 
 set -e
 
+HOOKSDIR=".config/simple-usb-automount/hooks"
+
 mnt="/run/mount/usb"
 mntopts_ntfs="user,umask=0000"
 mntopts_ext4="rw"
+mntopts_vfat="rw"
 dev="/dev/$2"
 
-mkdir /run/mount/usb -p
-findmnt /run/mount/usb || sudo mount -t tmpfs tmpfs /run/mount/usb
+[[ -n $DISP_USER ]] || DISP_USER=$(who | cut -d' ' -f1 | head -n 1)
+[[ -n $DISP_UID ]] || DISP_UID=$(id -u $DISP_USER)
+
+mkdir $mnt -p
+findmnt $mnt || sudo mount -t tmpfs tmpfs $mnt
 
 get_attrs () {
-	for attr in TYPE LABEL
+	for attr in TYPE LABEL FSTYPE
 	do
 		eval "MTDEV_$attr"="$(blkid -s $attr -o value /dev/$1)"
 	done
+}
+
+execute_as_user() {
+	CMD=$1 && shift
+
+	echo "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$DISP_UID/bus sudo -u $DISP_USER dbus-launch --exit-with-session" "$CMD" "$@" >> $mnt/.hooklog
+
+	DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$DISP_UID/bus sudo -u $DISP_USER dbus-launch --exit-with-session "$CMD" "$@"
 }
 
 # since eval sets global variables and we don't want them afterwards
@@ -25,15 +39,15 @@ function cleanup {
 
 trap cleanup EXIT
 
-if [[ "$1" == "a" ]]; then
+if [[ $1 == a ]]; then
 	for part in $(lsblk -nro name "$dev" | tac)
 	do
 		get_attrs $part
 
 		#if no filesystem matches or no label is set, do nothing
 		[[ -z "$MTDEV_LABEL" ]] && continue
-		[[ ! -v mntopts_$MTDEV_TYPE ]] && [[ -v mntopts_$MTDEV_FSTYPE ]] &&
-			MTDEV_TYPE=$MTDEV_FSTYPE || continue
+		[[ ! -v $MTDEV_TYPE ]] && [[ -v $MTDEV_FSTYPE ]] &&
+			MTDEV_TYPE=$MTDEV_FSTYPE
 
 		mntopts="mntopts_$MTDEV_TYPE"
 
@@ -41,16 +55,17 @@ if [[ "$1" == "a" ]]; then
 		mount "/dev/$part" "$mnt/$MTDEV_LABEL" -o "${!mntopts}"
 
 		if [[ "$?" -eq 0 ]]; then
-			sudo -u "$DISP_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DISP_UID/bus" notify-send "Mounted /dev/$part at $mnt/$MTDEV_LABEL"
+			execute_as_user notify-send "Device $MTDEV_LABEL:" "Mounted at $mnt/$MTDEV_LABEL"
+
+			[ -f "/home/$DISP_USER/$HOOKSDIR/post-mount/$MTDEV_LABEL" ] &&
+				execute_as_user sh "/home/$DISP_USER/$HOOKSDIR/post-mount/$MTDEV_LABEL"
 		else
 			rmdir "$mnt/$MTDEV_LABEL"
 		fi
 	done
 else
-	for part in $(ls "$mnt/" | grep "^$2")
+	for mountpoint in $(df -h | grep "$mnt/" | awk '{print $6}')
 	do
-		get_attrs $part
-		umount "$mnt/$MTDEV_LABEL"
-		rmdir "$mnt/$MTDEV_LABEL"
+		umount "$mountpoint" && rmdir "$mountpoint"
 	done
 fi
