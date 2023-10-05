@@ -59,8 +59,8 @@ if [[ $1 == a ]]; then
 		if [[ "$?" -eq 0 ]]; then
 			execute_as_user notify-send "Device $MTDEV_LABEL:" "Mounted at $mnt/$MTDEV_LABEL"
 
-			[ -f "/home/$DISP_USER/$HOOKSDIR/post-mount/$MTDEV_LABEL" ] &&
-				execute_as_user sh "/home/$DISP_USER/$HOOKSDIR/post-mount/$MTDEV_LABEL"
+			[ -f "/home/$DISP_USER/$HOOKSDIR/$MTDEV_LABEL/post-mount" ] &&
+				execute_as_user sh "/home/$DISP_USER/$HOOKSDIR/$MTDEV_LABEL/post-mount"
 		else
 			rm -r "$mnt/$MTDEV_LABEL"
 		fi
