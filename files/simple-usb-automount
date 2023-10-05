@@ -31,6 +31,10 @@ execute_as_user() {
 
 # since eval sets global variables and we don't want them afterwards
 function cleanup {
+	#if not mounted but mount directory exists, remove dir
+	mountpoint=$(df -h | grep "$mnt/$MTDEV_LABEL")
+	[[ -z $mountpoint ]] && [[ -d $mnt/$MTDEV_LABEL ]] && rm -r "$mnt/$MTDEV_LABEL"
+
 	unset MTDEV_TYPE
 	unset MTDEV_LABEL
 }
