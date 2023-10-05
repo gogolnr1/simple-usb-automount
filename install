@@ -1,9 +1,12 @@
 #!/bin/bash
 
-cd files
+[[ ! -f .env ]] && echo "Please create .env file with valid user NOTIFICATION_UID"
 
-# the user id (uid) to send the notification to (with notify-send)
-UID_NOTIFICATION="1000"
+set -a # automatically export all variables
+source .env
+set +a
+
+cd files
 
 cp 99-simple-usb-automount.rules "$2"/etc/udev/rules.d/
 
@@ -14,11 +17,10 @@ else
 fi
 chmod +x "$2"/usr/local/bin/simple-usb-automount
 
-sed "s/{UID}/$UID_NOTIFICATION/; s/{USER}/$(getent passwd "$UID_NOTIFICATION" | cut -d: -f1)/" simple-usb-automount@.service > "$2"/etc/systemd/system/simple-usb-automount@.service
+sed "s/{UID}/$NOTIFICATION_UID/; s/{USER}/$(getent passwd "$NOTIFICATION_UID" | cut -d: -f1)/" simple-usb-automount@.service > "$2"/etc/systemd/system/simple-usb-automount@.service
 
 systemctl daemon-reload
 
 udevadm control --reload-rules
 
 echo "Done"
-
