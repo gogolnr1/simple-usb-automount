@@ -1,3 +1,2 @@
-KERNEL=="sd[a-z]", SUBSYSTEMS=="usb", ACTION=="add", RUN+="/bin/systemctl start simple-usb-automount@%k"
-KERNEL=="sd[a-z]", SUBSYSTEMS=="usb", ACTION=="remove", RUN+="/bin/systemctl stop simple-usb-automount@%k"
-
+KERNEL=="sd[b-z]", SUBSYSTEMS=="usb", ACTION=="add", RUN+="/bin/systemctl start simple-usb-automount@%k"
+KERNEL=="sd[b-z]", SUBSYSTEMS=="usb", ACTION=="remove", RUN+="/bin/systemctl stop simple-usb-automount@%k"
