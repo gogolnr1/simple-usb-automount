@@ -26,9 +26,7 @@ get_attrs () {
 execute_as_user() {
 	CMD=$1 && shift
 
-	echo "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$DISP_UID/bus sudo -u $DISP_USER dbus-launch --exit-with-session" "$CMD" "$@" >> $mnt/.hooklog
-
-	DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$DISP_UID/bus sudo -u $DISP_USER dbus-launch --exit-with-session "$CMD" "$@"
+	DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$DISP_UID/bus sudo -u $DISP_USER dbus-launch "$CMD" "$@"
 }
 
 # since eval sets global variables and we don't want them afterwards
