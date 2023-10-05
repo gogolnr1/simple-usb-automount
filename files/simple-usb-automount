@@ -62,12 +62,12 @@ if [[ $1 == a ]]; then
 			[ -f "/home/$DISP_USER/$HOOKSDIR/post-mount/$MTDEV_LABEL" ] &&
 				execute_as_user sh "/home/$DISP_USER/$HOOKSDIR/post-mount/$MTDEV_LABEL"
 		else
-			rmdir "$mnt/$MTDEV_LABEL"
+			rm -r "$mnt/$MTDEV_LABEL"
 		fi
 	done
 else
 	for mountpoint in $(df -h | grep "$mnt/" | awk '{print $6}')
 	do
-		umount "$mountpoint" && rmdir "$mountpoint"
+		umount "$mountpoint" && rm -r "$mountpoint"
 	done
 fi
