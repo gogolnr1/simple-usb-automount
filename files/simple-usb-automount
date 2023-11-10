@@ -47,7 +47,7 @@ if [[ $1 == a ]]; then
 		get_attrs $part
 
 		#if no filesystem matches or no label is set, do nothing
-		[[ -z "$MTDEV_LABEL" ]] && continue
+		[[ -z "$MTDEV_LABEL" ]] && echo "$MTDEV_LABEL has no label, skipping..." && continue
 		[[ ! -v $MTDEV_TYPE ]] && [[ -v $MTDEV_FSTYPE ]] &&
 			MTDEV_TYPE=$MTDEV_FSTYPE
 
