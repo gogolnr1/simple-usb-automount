@@ -7,7 +7,7 @@ HOOKSDIR=".config/simple-usb-automount/hooks"
 mnt="/run/mount/usb"
 mntopts_ntfs="user,umask=0000"
 mntopts_ext4="rw"
-mntopts_vfat="rw"
+mntopts_vfat="rw,umask=0000"
 dev="/dev/$2"
 
 [[ -n $DISP_USER ]] || DISP_USER=$(who | cut -d' ' -f1 | head -n 1)
