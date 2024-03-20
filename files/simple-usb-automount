@@ -57,6 +57,7 @@ if [[ $1 == a ]]; then
 		mount "/dev/$part" "$mnt/$MTDEV_LABEL" -o "${!mntopts}"
 
 		if [[ "$?" -eq 0 ]]; then
+			echo "$MTDEV_LABEL" > $mnt/.lastmount
 			execute_as_user notify-send "Device $MTDEV_LABEL:" "Mounted at $mnt/$MTDEV_LABEL"
 
 			[ -f "/home/$DISP_USER/$HOOKSDIR/$MTDEV_LABEL/post-mount" ] &&
